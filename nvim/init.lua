@@ -1,0 +1,1 @@
+C:/Users/Pyry/AppData/Local/nvim/init.lua
