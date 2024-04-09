@@ -5,6 +5,7 @@ vim.cmd [[
 
   Plug 'nvim-telescope/telescope.nvim', {'do': ':UpdateRemotePlugins'}
   Plug 'nvim-lua/plenary.nvim'
+  Plug 'nvim-tree/nvim-tree.lua'
 
   Plug 'williamboman/mason.nvim'
   Plug 'williamboman/mason-lspconfig.nvim'
@@ -22,6 +23,7 @@ vim.cmd [[
 
   Plug 'tpope/vim-fugitive'
   Plug 'lukas-reineke/indent-blankline.nvim'
+  Plug 'nvim-lualine/lualine.nvim'
 
   call plug#end()
 ]]
@@ -53,6 +55,9 @@ require('onedark').setup  {
 
 vim.cmd('colorscheme onedark')
 
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 -- line numbers
 vim.o.number = true
 vim.o.relativenumber = true
@@ -67,6 +72,9 @@ vim.o.shiftwidth = 2
 vim.o.expandtab = true
 vim.o.smartindent = true
 
+-- search
+vim.o.hlsearch = false
+
 -- terminal
 if vim.fn.has('win32') == 1 then
   vim.o.shell = 'powershell.exe'
@@ -79,13 +87,23 @@ vim.cmd('set noautochdir')
 -- keymaps
 vim.api.nvim_set_keymap('n', '<F1>', ':Telescope find_files<CR>', { noremap = true })
 vim.api.nvim_set_keymap('n', '<F3>', ':Telescope live_grep<CR>', { noremap = true })
+vim.api.nvim_set_keymap('n', '<leader>e', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
 
 vim.api.nvim_set_keymap('t', '<C-w><C-w>', '<C-\\><C-n>', { noremap = true })
 
 vim.api.nvim_set_keymap('x', '<leader>p', '\"_dP', { noremap = true })
 
+-- system clipboard
 vim.api.nvim_set_keymap('n', '<leader>p', '\"+p', { noremap = true })
 vim.api.nvim_set_keymap('x', '<leader>y', '\"+y', { noremap = true })
+
+-- indentation
+vim.api.nvim_set_keymap('v', '>', '>gv', { noremap = true })
+vim.api.nvim_set_keymap('v', '<', '<gv', { noremap = true })
+
+-- windows/panes
+vim.api.nvim_set_keymap('n', '<C->>', '<C-w><', { noremap = true })
+vim.api.nvim_set_keymap('n', '<C-<>', '<C-w>>', { noremap = true })
 
 -- keymaps - lsp
 vim.api.nvim_set_keymap('n', 'gd', ':lua vim.lsp.buf.definition()<CR>', { noremap = true, silent = true })
@@ -99,6 +117,17 @@ vim.api.nvim_set_keymap('n', '<leader>ca', ':lua vim.lsp.buf.code_action()<CR>',
 vim.api.nvim_set_keymap('x', '<leader>ca', ':lua vim.lsp.buf.range_code_action()<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('i', '<C-Space>', 'pumvisible() ? "\\<C-n>" : "\\<C-x>\\<C-o>"', { noremap = true, expr = true })
 
+vim.api.nvim_create_user_command('SetTabSize', function(opts)
+  local size = tonumber(opts.args)
+  if size then
+    vim.opt.tabstop = size
+    vim.opt.shiftwidth = size
+    vim.opt.softtabstop = size
+  else
+    print("Invalid size: " .. opts.args)
+  end
+end, { nargs = 1 })
+
 function _G.smart_esc()
     local current_win = vim.api.nvim_get_current_win()
     if vim.api.nvim_win_get_config(current_win).relative ~= "" then
@@ -107,6 +136,14 @@ function _G.smart_esc()
         vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", true)
     end
 end
+
+-- filetypes
+vim.filetype.add({
+  extension = {
+    frag = "glsl",
+    vert = "glsl"
+  }
+})
 
 -- highlighting
 require'nvim-treesitter.configs'.setup {
@@ -121,7 +158,9 @@ require'nvim-treesitter.configs'.setup {
     "html",
     "rust",
     "css",
-    "scss"
+    "scss",
+    "glsl",
+    "markdown"
   },
   indent = {
     enable = true, -- enable indentation
@@ -217,6 +256,8 @@ require("mason-lspconfig").setup({
   }
 })
 
+require'lspconfig'.glsl_analyzer.setup{}
+
 vim.diagnostic.config {
   update_in_insert = true,
 }
@@ -255,6 +296,30 @@ require('telescope').setup{
     -- please take a look at the readme of the extension you want to configure
   }
 }
+
+require('nvim-tree').setup {
+  update_focused_file = {
+    enable = true
+  },
+  view = {
+    adaptive_size = true
+  },
+  git = {
+    enable = true,
+    timeout = 10000
+  },
+  filters = {
+    git_ignored = true,
+    dotfiles = false,
+    git_clean = false,
+    no_buffer = false,
+    no_bookmark = false,
+    custom = {},
+    exclude = {},
+  }
+}
+
+require('lualine').setup()
 
 -- indentation
 require('ibl').setup {
