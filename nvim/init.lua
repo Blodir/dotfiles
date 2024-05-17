@@ -1,6 +1,5 @@
 vim.cmd [[
   call plug#begin('~/.vim/plugged')
-  Plug 'rebelot/kanagawa.nvim', { 'as': 'kanagawa' }
   Plug 'navarasu/onedark.nvim'
 
   Plug 'nvim-telescope/telescope.nvim', {'do': ':UpdateRemotePlugins'}
@@ -32,7 +31,7 @@ vim.cmd("cd D:\\git\\")
 
 -- neovide
 if vim.g.neovide then
-  vim.o.guifont = "Consolas:h16"
+  vim.o.guifont = "JetBrainsMono NFM:h16"
   vim.opt.linespace = 0
 
   vim.g.neovide_floating_shadow = true
@@ -84,7 +83,13 @@ end
 -- misc
 vim.cmd('set noautochdir')
 
--- keymaps
+-- navigation
+local builtin = require('telescope.builtin')
+vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
+vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
+vim.keymap.set('n', '<leader>fb', builtin.buffers, {})
+vim.keymap.set('n', '<leader>fh', builtin.help_tags, {})
+
 vim.api.nvim_set_keymap('n', '<F1>', ':Telescope find_files<CR>', { noremap = true })
 vim.api.nvim_set_keymap('n', '<F3>', ':Telescope live_grep<CR>', { noremap = true })
 vim.api.nvim_set_keymap('n', '<leader>e', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
@@ -106,6 +111,7 @@ vim.api.nvim_set_keymap('n', '<C->>', '<C-w><', { noremap = true })
 vim.api.nvim_set_keymap('n', '<C-<>', '<C-w>>', { noremap = true })
 
 -- keymaps - lsp
+
 vim.api.nvim_set_keymap('n', 'gd', ':lua vim.lsp.buf.definition()<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', 'gr', ':lua vim.lsp.buf.references()<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', 'K', ':lua vim.lsp.buf.hover()<CR>', { noremap = true, silent = true })
@@ -141,7 +147,8 @@ end
 vim.filetype.add({
   extension = {
     frag = "glsl",
-    vert = "glsl"
+    vert = "glsl",
+    wgsl = "wgsl"
   }
 })
 
@@ -160,6 +167,7 @@ require'nvim-treesitter.configs'.setup {
     "css",
     "scss",
     "glsl",
+    "wgsl",
     "markdown"
   },
   indent = {
@@ -245,7 +253,8 @@ require("mason-lspconfig").setup({
     'html',
     'cssls',
     'angularls',
-    'rust_analyzer'
+    'rust_analyzer',
+    'lua_ls'
   },
   handlers = {
     function(server)
@@ -257,6 +266,15 @@ require("mason-lspconfig").setup({
 })
 
 require'lspconfig'.glsl_analyzer.setup{}
+require('lspconfig').lua_ls.setup {
+  settings = {
+    Lua = {
+      diagnostics = {
+        globals = {'vim'}
+      }
+    }
+  }
+}
 
 vim.diagnostic.config {
   update_in_insert = true,
@@ -319,7 +337,11 @@ require('nvim-tree').setup {
   }
 }
 
-require('lualine').setup()
+require('lualine').setup {
+  options = {
+    icons_enabled = true
+  }
+}
 
 -- indentation
 require('ibl').setup {
