@@ -1,6 +1,7 @@
 vim.cmd [[
   call plug#begin('~/.vim/plugged')
   Plug 'navarasu/onedark.nvim'
+  Plug 'EdenEast/nightfox.nvim'
 
   Plug 'nvim-telescope/telescope.nvim', {'do': ':UpdateRemotePlugins'}
   Plug 'nvim-lua/plenary.nvim'
@@ -21,6 +22,7 @@ vim.cmd [[
   Plug 'hrsh7th/vim-vsnip'
 
   Plug 'tpope/vim-fugitive'
+  Plug 'tpope/vim-sleuth'
   Plug 'lukas-reineke/indent-blankline.nvim'
   Plug 'nvim-lualine/lualine.nvim'
 
@@ -188,8 +190,23 @@ cmp.setup({
       -- vim.fn["UltiSnips#Anon"](args.body) -- For `ultisnips` users.
     end,
   },
+  enabled = function()
+      -- disable completion in certain filetypes
+      local filetype = vim.bo.filetype
+      local disabled_filetypes = { 'markdown' } -- add filetypes you want to disable
+      for _, ft in ipairs(disabled_filetypes) do
+        if filetype == ft then
+          return false
+        end
+      end
+      return true
+  end,
   window = {
-    completion = cmp.config.window.bordered(),
+    completion = {
+      border = 'rounded',
+      winhighlight = 'Normal:Normal,FloatBorder:Normal,CursorLine:Visual,Search:None',
+      max_height = 10,  -- Set the maximum height for the completion menu
+    },
     -- documentation = cmp.config.window.bordered(),
   },
   mapping = cmp.mapping.preset.insert({
@@ -207,7 +224,36 @@ cmp.setup({
     -- { name = 'snippy' }, -- For snippy users.
   }, {
     { name = 'buffer' },
-  })
+  }),
+  sorting = {
+    comparators = {
+      cmp.config.compare.offset,
+      cmp.config.compare.exact,
+      cmp.config.compare.score,
+      function(entry1, entry2)
+        local kind1 = entry1:get_kind()
+        local kind2 = entry2:get_kind()
+
+        -- Sort fields at the top
+        if kind1 == cmp.lsp.CompletionItemKind.Field and kind2 ~= cmp.lsp.CompletionItemKind.Field then
+          return true
+        elseif kind1 ~= cmp.lsp.CompletionItemKind.Field and kind2 == cmp.lsp.CompletionItemKind.Field then
+          return false
+        end
+
+        -- Sort snippets at the bottom
+        if kind1 == cmp.lsp.CompletionItemKind.Snippet and kind2 ~= cmp.lsp.CompletionItemKind.Snippet then
+          return false
+        elseif kind1 ~= cmp.lsp.CompletionItemKind.Snippet and kind2 == cmp.lsp.CompletionItemKind.Snippet then
+          return true
+        end
+      end,
+      cmp.config.compare.kind,
+      cmp.config.compare.sort_text,
+      cmp.config.compare.length,
+      cmp.config.compare.order,
+    },
+  }
 })
 
 -- Set configuration for specific filetype.
@@ -259,7 +305,7 @@ require("mason-lspconfig").setup({
   handlers = {
     function(server)
       lspconfig[server].setup({
-        capabilities = lsp_capabilities,
+        capabilities = capabilities,
       })
     end
   }
@@ -275,6 +321,15 @@ require('lspconfig').lua_ls.setup {
     }
   }
 }
+
+local custom_attach = function(client)
+      if client.config.flags then
+        client.config.flags.allow_incremental_sync = true
+      end
+    end
+require('lspconfig').elmls.setup({
+   on_attach = custom_attach;
+})
 
 vim.diagnostic.config {
   update_in_insert = true,
